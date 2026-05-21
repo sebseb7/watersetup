@@ -25,14 +25,38 @@ export function updateSVGSchedulingStates() {
   syncPumpMotorSVG();
 }
 
-/** Pump rotor animation — must run every sim frame (physics updates pumpRunning continuously). */
+/** One full rotor turn at ramp=1 and 1× sim speed (seconds). */
+const PUMP_ROTOR_REV_SEC = 0.8;
+
+let pumpRotorDeg = 0;
+let lastPumpRotorTime = 0;
+
+/** Pump rotor — angle integrated from pumpRamp (avoids CSS duration restarts on stop). */
 export function syncPumpMotorSVG() {
   const pumpSvg = document.getElementById('svg-pump');
-  if (!pumpSvg) return;
-  pumpSvg.classList.toggle(
-    'pump-active',
-    state.pumpRunning && state.simulationSpeed > 0
-  );
+  const rotorGroup = document.getElementById('svg-pump-rotor-group');
+  if (!pumpSvg || !rotorGroup) return;
+
+  const ramp = state.pumpRamp;
+  const active = ramp > 0.02 && state.simulationSpeed > 0;
+  const now = performance.now();
+
+  if (active && lastPumpRotorTime > 0) {
+    const dtSec = Math.min(0.1, (now - lastPumpRotorTime) / 1000);
+    const degPerSec = (360 / PUMP_ROTOR_REV_SEC) * ramp * state.simulationSpeed;
+    pumpRotorDeg = (pumpRotorDeg + degPerSec * dtSec) % 360;
+  }
+
+  lastPumpRotorTime = now;
+  pumpSvg.classList.toggle('pump-active', active);
+
+  if (active) {
+    rotorGroup.style.transform = `rotate(${pumpRotorDeg}deg)`;
+  } else {
+    pumpRotorDeg = 0;
+    lastPumpRotorTime = 0;
+    rotorGroup.style.transform = '';
+  }
 }
 
 export function syncSVGValve(valveKey, isOpen) {

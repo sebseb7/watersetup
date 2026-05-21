@@ -5,8 +5,6 @@ import { FRESHWATER_FILL_RATE } from './physics.js';
 import { addLog } from './logger.js';
 
 let audioCtx = null;
-let alarmOsc = null;
-let alarmGain = null;
 let sprayGain = null;
 /** @type {{ master: GainNode; trickleGain: GainNode; streamGain: GainNode } | null} */
 let tankDrip = null;
@@ -377,12 +375,13 @@ function playPumpTransient(kind, now) {
 }
 
 function isPumpMotorOn() {
-  return state.simulationSpeed > 0 && state.soundEnabled && state.pumpRunning;
+  return state.simulationSpeed > 0 && state.soundEnabled && state.pumpRamp > 0.04;
 }
 
 function updatePumpSound(now) {
   if (!pump) return;
 
+  const ramp = state.pumpRamp;
   const motorOn = isPumpMotorOn();
 
   if (motorOn && !pumpWasRunning) playPumpTransient('start', now);
@@ -396,19 +395,21 @@ function updatePumpSound(now) {
 
   const flow = state.flowRate || 0;
   const load = Math.max(0.25, Math.min(1, flow / 50));
-  const rotHz = 46 + load * 9;
+  /** Soft start/stop: spin rate follows ramp; volume stays full while motor is on. */
+  const spin = 0.34 + 0.66 * ramp;
+  const rotHz = (46 + load * 9) * spin;
 
   pump.rotor.osc.frequency.setTargetAtTime(rotHz, now, 0.12);
   pump.harmonics.forEach(({ osc }, i) => {
     const mult = [2, 3, 4, 5, 6][i];
     osc.frequency.setTargetAtTime(rotHz * mult, now, 0.12);
   });
-  pump.cogCarrier.osc.frequency.setTargetAtTime(380 + load * 80, now, 0.15);
-  pump.bearing.osc.frequency.setTargetAtTime(1550 + load * 450, now, 0.15);
-  pump.motorBody.frequency.setTargetAtTime(155 + load * 45, now, 0.15);
-  pump.turbLpf.frequency.setTargetAtTime(400 + load * 350, now, 0.2);
-  pump.turbWetBp.frequency.setTargetAtTime(240 + load * 120, now, 0.2);
-  pump.distanceLpf.frequency.setTargetAtTime(3800 + load * 1400, now, 0.2);
+  pump.cogCarrier.osc.frequency.setTargetAtTime((380 + load * 80) * spin, now, 0.15);
+  pump.bearing.osc.frequency.setTargetAtTime((1550 + load * 450) * spin, now, 0.15);
+  pump.motorBody.frequency.setTargetAtTime((155 + load * 45) * spin, now, 0.15);
+  pump.turbLpf.frequency.setTargetAtTime((400 + load * 350) * spin, now, 0.2);
+  pump.turbWetBp.frequency.setTargetAtTime((240 + load * 120) * spin, now, 0.2);
+  pump.distanceLpf.frequency.setTargetAtTime((3800 + load * 1400) * spin, now, 0.2);
 
   let motorLevel = 0.88 + load * 0.12;
   let turbLevel = 0.02 + load * load * 0.14;
@@ -438,10 +439,6 @@ export function initAudio() {
 
     pump = buildPumpGraph(audioCtx);
     tankDrip = buildTankDripGraph(audioCtx);
-
-    alarmGain = audioCtx.createGain();
-    alarmGain.gain.setValueAtTime(0, audioCtx.currentTime);
-    alarmGain.connect(audioCtx.destination);
 
     const bufferSize = audioCtx.sampleRate * 2;
     const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -584,7 +581,6 @@ export function updateSynthNodes() {
       pump.pumpOut.gain.setTargetAtTime(0, now, 0.08);
       sprayGain?.gain.setTargetAtTime(0, now, 0.1);
       tankDrip?.master.gain.setTargetAtTime(0, now, 0.1);
-      alarmGain?.gain.setTargetAtTime(0, now, 0.1);
     }
     pumpWasRunning = false;
     return;
@@ -596,25 +592,6 @@ export function updateSynthNodes() {
 
   const now = audioCtx.currentTime;
   updatePumpSound(now);
-
-  const isAlarm =
-    state.alarmState !== 'NORMAL' &&
-    state.pumpRunning &&
-    state.simulationSpeed > 0;
-
-  if (isAlarm) {
-    if (!alarmOsc) {
-      alarmOsc = audioCtx.createOscillator();
-      alarmOsc.type = 'sine';
-      alarmOsc.frequency.setValueAtTime(900, now);
-      alarmOsc.connect(alarmGain);
-      alarmOsc.start();
-    }
-    const cycle = Math.floor(Date.now() / 300) % 2;
-    alarmGain.gain.setTargetAtTime(cycle === 0 ? 0.08 : 0, now, 0.05);
-  } else if (alarmGain) {
-    alarmGain.gain.setTargetAtTime(0, now, 0.1);
-  }
 
   if (sprayGain) {
     const p = state.flowPaths;

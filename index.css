@@ -263,11 +263,6 @@ main {
 
 #svg-pump-rotor-group {
   transform-origin: 0px 0px;
-  transition: transform 0.1s linear;
-}
-
-.pump-active #svg-pump-rotor-group {
-  animation: spin-pump 0.8s linear infinite;
 }
 
 .pump-active .pump-rotor {

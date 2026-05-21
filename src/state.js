@@ -11,6 +11,10 @@ export const PASSIVE_MIN_PRESSURE_BAR = 0.15;
 /** Pump hysteresis: start when pressure falls below cut-in; stop when expansion tank is full. */
 export const PUMP_CUT_IN_BAR_DEFAULT = 1.5;
 
+/** Motor ramp times (seconds at 1× sim speed) for soft start / stop. */
+export const PUMP_SOFT_START_SEC = 2.5;
+export const PUMP_SOFT_STOP_SEC = 3.5;
+
 /** Rated hydraulic flows (simulation uses L/min internally). */
 export const PUMP_FLOW_L_PER_H = 5600;
 export const SPRINKLER_FLOW_L_PER_H = 800;
@@ -58,6 +62,8 @@ export const state = {
   
   // Pump (always enabled; motor run state follows pressure switch / tank level)
   pumpRunning: false,
+  /** 0–1 motor ramp (flow, power, rotor, audio); eases toward pumpRunning. */
+  pumpRamp: 0,
   
   // Pressure & Expansion Tank
   systemPressure: 0, // bar

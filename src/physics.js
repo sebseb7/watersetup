@@ -8,6 +8,8 @@ import {
   PASSIVE_MIN_PRESSURE_BAR,
   PUMP_FLOW_L_PER_MIN,
   PUMP_CUT_IN_BAR_DEFAULT,
+  PUMP_SOFT_START_SEC,
+  PUMP_SOFT_STOP_SEC,
   RETURN_DISCHARGE_L_PER_MIN,
   FEED_EQUALIZE_TAU_SEC,
   SPRINKLER_FLOW_L_PER_MIN
@@ -121,12 +123,27 @@ function planDischargeFlow(pressureFactor = 1) {
  * Motor on/off: needs feed water + (open discharge or expansion not full).
  * With pressure switch: also start/stop on cut-in / tank full.
  */
+/** Ease motor output toward pressure-switch command (soft start/stop). */
+export function updatePumpRamp(dt) {
+  if (state.simulationSpeed <= 0) {
+    state.pumpRamp = 0;
+    return;
+  }
+  const target = state.pumpRunning ? 1 : 0;
+  if (target > state.pumpRamp) {
+    state.pumpRamp = Math.min(1, state.pumpRamp + dt / PUMP_SOFT_START_SEC);
+  } else if (target < state.pumpRamp) {
+    state.pumpRamp = Math.max(0, state.pumpRamp - dt / PUMP_SOFT_STOP_SEC);
+  }
+}
+
 export function updatePumpRunningState(
   feedChannels = countFeedChannelsWithWater(),
   dischargeChannels = countSprinklerZones() + countReturnValves()
 ) {
   if (state.simulationSpeed <= 0) {
     state.pumpRunning = false;
+    state.pumpRamp = 0;
     return;
   }
 
@@ -162,7 +179,9 @@ export function calculateFlowPhysics(dt) {
   const dischargeChannels = sprinklersOpen + returnsOpen;
 
   updatePumpRunningState(feedChannels, dischargeChannels);
+  updatePumpRamp(dt);
 
+  const ramp = state.pumpRamp;
   let flowRate = 0;
   let flowIntoTank = 0;
   let flowOutOfTank = 0;
@@ -170,34 +189,36 @@ export function calculateFlowPhysics(dt) {
   let perReturnLpm = 0;
 
   if (state.simulationSpeed > 0) {
-    if (state.pumpRunning) {
+    if (ramp > 0.001) {
       if (feedChannels === 0) {
         flowRate = 0;
-        state.powerDraw = 75;
-        state.alarmState = 'DRY_RUN';
+        state.powerDraw = 3 + 72 * ramp;
+        state.alarmState = ramp > 0.12 ? 'DRY_RUN' : 'NORMAL';
       } else if (dischargeChannels === 0) {
         state.alarmState = 'NORMAL';
-        state.powerDraw = 210 + state.systemPressure * 2;
+        state.powerDraw = (3 + (207 + state.systemPressure * 2) * ramp);
 
         if (!isExpansionTankFull()) {
-          flowIntoTank = PUMP_FLOW_L_PER_MIN * (dt / 60);
+          flowIntoTank = PUMP_FLOW_L_PER_MIN * ramp * (dt / 60);
         }
       } else {
         state.alarmState = 'NORMAL';
         const plan = planDischargeFlow();
-        flowRate = plan.flowRate;
-        perSprinklerLpm = plan.perSprinklerLpm;
-        perReturnLpm = plan.perReturnLpm;
+        flowRate = plan.flowRate * ramp;
+        perSprinklerLpm = plan.perSprinklerLpm * ramp;
+        perReturnLpm = plan.perReturnLpm * ramp;
         state.powerDraw =
-          210 + (flowRate / PUMP_FLOW_L_PER_MIN) * 280 + state.systemPressure * 0.5;
+          3 +
+          (207 + (flowRate / Math.max(ramp, 0.001) / PUMP_FLOW_L_PER_MIN) * 280 + state.systemPressure * 0.5) *
+            ramp;
 
-        const excess = plan.capacity - plan.demand;
+        const excess = (plan.capacity - plan.demand) * ramp;
         if (excess > 0.01 && !isExpansionTankFull()) {
           flowIntoTank = Math.min(excess, EXPANSION_OVERFLOW_FILL) * (dt / 60);
         }
       }
     } else {
-      state.powerDraw = state.pumpRunning ? 0 : 3;
+      state.powerDraw = 3;
 
       if (
         dischargeChannels > 0 &&
@@ -240,13 +261,13 @@ export function calculateFlowPhysics(dt) {
   // Update pressure based on expansion volume
   state.systemPressure =
     (state.expansionTankVolume / state.expansionTankMax) * EXPANSION_PRESSURE_BAR;
-  if (state.pumpRunning && dischargeChannels === 0) {
-    // Deadheaded pump builds extra head pressure
+  if (ramp > 0.001 && dischargeChannels === 0 && feedChannels > 0) {
+    // Deadheaded pump builds extra head pressure (scales with motor ramp)
     state.systemPressure = Math.min(
       GAUGE_MAX_BAR,
-      state.systemPressure + 1.0 * dt
+      state.systemPressure + 1.0 * ramp * dt
     );
-  } else if (!state.pumpRunning && state.expansionTankVolume <= 0.01) {
+  } else if (ramp <= 0.001 && state.expansionTankVolume <= 0.01) {
     // Pressure bleeds to 0 when tank is empty
     state.systemPressure = Math.max(0, state.systemPressure - 1.4 * dt);
   }
@@ -269,7 +290,7 @@ export function calculateFlowPhysics(dt) {
     if (sourceB) activeFeeds.push('tankB');
     if (sourceC) activeFeeds.push('tankC');
     
-    if (activeFeeds.length > 0 && state.pumpRunning) {
+    if (activeFeeds.length > 0 && ramp > 0.001) {
       const pullTotal = Math.max(0, totalLitersTransferred + flowIntoTank - flowOutOfTank);
       const pullPerSource = pullTotal / activeFeeds.length;
       activeFeeds.forEach(source => {
@@ -432,13 +453,14 @@ function applyFeedPipeVisualization({ pumpFromFeeds, feedManifoldActive, sourceA
 /** Derive SVG pipe highlights from the same conditions as the flow model. */
 function updateFlowPaths({ sourceA, sourceB, sourceC, feedChannels, dischargeChannels, flowRate, flowIntoTank, flowOutOfTank }) {
   const sim = state.simulationSpeed > 0;
-  const dryRun = sim && state.pumpRunning && feedChannels === 0;
-  const deadheadCharge = sim && state.pumpRunning && feedChannels > 0 && dischargeChannels === 0;
-  const pumpedDischarge = sim && state.pumpRunning && feedChannels > 0 && dischargeChannels > 0 && flowRate > 0.01;
-  const passiveDischarge = sim && !state.pumpRunning && dischargeChannels > 0 && flowRate > 0.01;
+  const ramp = state.pumpRamp;
+  const dryRun = sim && ramp > 0.08 && feedChannels === 0;
+  const deadheadCharge = sim && ramp > 0.08 && feedChannels > 0 && dischargeChannels === 0;
+  const pumpedDischarge = sim && ramp > 0.08 && feedChannels > 0 && dischargeChannels > 0 && flowRate > 0.01;
+  const passiveDischarge = sim && ramp <= 0.08 && dischargeChannels > 0 && flowRate > 0.01;
 
   const fluidCirculating = sim && !dryRun && (pumpedDischarge || deadheadCharge || passiveDischarge);
-  const pumpFromFeeds = sim && state.pumpRunning && feedChannels > 0 && !dryRun;
+  const pumpFromFeeds = sim && ramp > 0.08 && feedChannels > 0 && !dryRun;
   const pumpOutletActive = fluidCirculating && (pumpFromFeeds || passiveDischarge);
 
   const returnOpen = state.valveReturnA || state.valveReturnB || state.valveReturnC;

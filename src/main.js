@@ -31,6 +31,7 @@ function simLoop(timeNow) {
     state.sprinklerLpmPerZone = 0;
     state.returnLpmPerOutlet = 0;
     state.powerDraw = 0;
+    state.pumpRamp = 0;
     resetFlowPaths();
   }
   
