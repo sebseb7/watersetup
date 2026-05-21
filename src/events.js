@@ -2,7 +2,7 @@
 
 import { state } from './state.js';
 import { addLog } from './logger.js';
-import { ensureAudioReady, playClickSound } from './audio.js';
+import { ensureAudioReady, playValveSound } from './audio.js';
 import { updatePumpRunningState } from './physics.js';
 import { updateSVGSchedulingStates } from './renderer.js';
 
@@ -40,7 +40,7 @@ export function bindControlListeners() {
     el.addEventListener('click', () => {
       ensureAudioReady();
       state[stateKey] = !state[stateKey];
-      playClickSound();
+      playValveSound(state[stateKey]);
       addLog(`${name} is now ${state[stateKey] ? 'OPEN' : 'CLOSED'}`, 'info');
       updatePumpRunningState();
       updateSVGSchedulingStates();

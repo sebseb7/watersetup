@@ -228,6 +228,7 @@ export function calculateFlowPhysics(dt) {
   
   state.flowRate = flowRate;
   state.sprinklerLpmPerZone = perSprinklerLpm;
+  state.returnLpmPerOutlet = perReturnLpm;
   
   // 6. Tank Volume & Pressure updates
   if (flowIntoTank > 0) {
@@ -342,7 +343,7 @@ export function calculateFlowPhysics(dt) {
 }
 
 /** L/min per open fresh fill valve — fast municipal fill into small tanks. */
-const FRESHWATER_FILL_RATE = 150;
+export const FRESHWATER_FILL_RATE = 150;
 
 export function applyFreshwaterFill(dt) {
   if (state.simulationSpeed <= 0) return;

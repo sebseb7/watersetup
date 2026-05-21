@@ -25,17 +25,17 @@ export const RETURN_DISCHARGE_L_PER_MIN = RETURN_DISCHARGE_L_PER_H / 60;
 export const FEED_EQUALIZE_TAU_SEC = 45;
 
 /** Storage tanks A/B/C capacity (liters only — SVG size unchanged). */
-export const TANK_CAPACITY_L = 30;
+export const TANK_CAPACITY_L = 250;
 
 export const state = {
   // Simulation settings
   simulationSpeed: 1, // 0 = paused, 1 = 1x, 2 = 2x, 5 = 5x
   soundEnabled: true,
   
-  // Tanks (liters; small capacity → faster fill/drain at same pump flow)
-  tankA: 15,
-  tankB: 5,
-  tankC: 25,
+  // Tanks (liters; SVG size unchanged)
+  tankA: 250,
+  tankB: 250,
+  tankC: 250,
   tankMax: TANK_CAPACITY_L,
   
   // Valves (false = closed, true = open)
@@ -67,6 +67,7 @@ export const state = {
   // Calculated Telemetry
   flowRate: 0, // L/min (total leaving pump / expansion header)
   sprinklerLpmPerZone: 0, // L/min per open watering zone this tick
+  returnLpmPerOutlet: 0, // L/min per open return/recirc valve this tick
   powerDraw: 0, // Watts
   totalWaterConsumed: 0, // Liters
   alarmState: 'NORMAL', // 'NORMAL', 'DRY_RUN', 'HIGH_PRESSURE'

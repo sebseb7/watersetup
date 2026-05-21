@@ -29,6 +29,7 @@ function simLoop(timeNow) {
     // Stalled stats when paused
     state.flowRate = 0;
     state.sprinklerLpmPerZone = 0;
+    state.returnLpmPerOutlet = 0;
     state.powerDraw = 0;
     resetFlowPaths();
   }
