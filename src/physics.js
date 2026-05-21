@@ -11,7 +11,9 @@ import {
   PUMP_SOFT_START_SEC,
   PUMP_SOFT_STOP_SEC,
   RETURN_DISCHARGE_L_PER_MIN,
+  EXPANSION_DISCHARGE_L_PER_MIN,
   FEED_EQUALIZE_TAU_SEC,
+  FRESHWATER_FILL_L_PER_MIN,
   SPRINKLER_FLOW_L_PER_MIN
 } from './state.js';
 import { addLog } from './logger.js';
@@ -98,13 +100,13 @@ function pumpHasHydraulicWork(feedChannels, dischargeChannels) {
   return !isExpansionTankFull();
 }
 
-/** Demand (L/min) vs fixed 5600 L/h pump; scale each outlet when throttled. */
-function planDischargeFlow(pressureFactor = 1) {
+/** Demand (L/min) vs supply cap; scale each outlet when throttled. */
+function planDischargeFlow(pressureFactor = 1, supplyLpm = PUMP_FLOW_L_PER_MIN * pressureFactor) {
   const sprinklers = countSprinklerZones();
   const returns = countReturnValves();
   const demand =
     sprinklers * SPRINKLER_FLOW_L_PER_MIN + returns * RETURN_DISCHARGE_L_PER_MIN;
-  const capacity = PUMP_FLOW_L_PER_MIN * pressureFactor;
+  const capacity = supplyLpm;
   const flowRate = demand > 0 ? Math.min(capacity, demand) : 0;
   const scale = demand > 0 ? flowRate / demand : 0;
 
@@ -226,7 +228,10 @@ export function calculateFlowPhysics(dt) {
         state.systemPressure > PASSIVE_MIN_PRESSURE_BAR
       ) {
         const pressureFactor = state.systemPressure / EXPANSION_PRESSURE_BAR;
-        const plan = planDischargeFlow(pressureFactor);
+        const plan = planDischargeFlow(
+          pressureFactor,
+          EXPANSION_DISCHARGE_L_PER_MIN * pressureFactor
+        );
         flowRate = plan.flowRate;
         perSprinklerLpm = plan.perSprinklerLpm;
         perReturnLpm = plan.perReturnLpm;
@@ -363,13 +368,13 @@ export function calculateFlowPhysics(dt) {
   updatePlants(dt, zoneIrrigating);
 }
 
-/** L/min per open fresh fill valve — fast municipal fill into small tanks. */
-export const FRESHWATER_FILL_RATE = 150;
+/** L/min per open fresh fill valve (see FRESHWATER_FILL_L_PER_H in state). */
+export const FRESHWATER_FILL_RATE = FRESHWATER_FILL_L_PER_MIN;
 
 export function applyFreshwaterFill(dt) {
   if (state.simulationSpeed <= 0) return;
 
-  const litersPerTick = (FRESHWATER_FILL_RATE / 60) * dt;
+  const litersPerTick = FRESHWATER_FILL_L_PER_MIN * (dt / 60);
   const tanks = [
     { valve: state.valveFreshA, key: 'tankA', label: 'A' },
     { valve: state.valveFreshB, key: 'tankB', label: 'B' },

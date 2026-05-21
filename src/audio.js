@@ -1,7 +1,6 @@
 // Pumpensimulator - Web Audio API Synthesis Engine
 
 import { state, RETURN_DISCHARGE_L_PER_MIN, SPRINKLER_FLOW_L_PER_MIN } from './state.js';
-import { FRESHWATER_FILL_RATE } from './physics.js';
 import { addLog } from './logger.js';
 
 let audioCtx = null;

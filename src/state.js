@@ -18,12 +18,18 @@ export const PUMP_SOFT_STOP_SEC = 3.5;
 /** Rated hydraulic flows (simulation uses L/min internally). */
 export const PUMP_FLOW_L_PER_H = 5600;
 export const SPRINKLER_FLOW_L_PER_H = 800;
-/** Return/recirc outlets use the same nominal rate unless modeled separately later. */
-export const RETURN_DISCHARGE_L_PER_H = 800;
+/** Municipal fill per open freshwater valve (A/B/C). */
+export const FRESHWATER_FILL_L_PER_H = 10000;
+/** Each open return/recirc valve (A/B/C). */
+export const RETURN_DISCHARGE_L_PER_H = 4000;
+/** Max passive outflow from the expansion tank (pump off). */
+export const EXPANSION_DISCHARGE_L_PER_H = 5600;
 
 export const PUMP_FLOW_L_PER_MIN = PUMP_FLOW_L_PER_H / 60;
 export const SPRINKLER_FLOW_L_PER_MIN = SPRINKLER_FLOW_L_PER_H / 60;
+export const FRESHWATER_FILL_L_PER_MIN = FRESHWATER_FILL_L_PER_H / 60;
 export const RETURN_DISCHARGE_L_PER_MIN = RETURN_DISCHARGE_L_PER_H / 60;
+export const EXPANSION_DISCHARGE_L_PER_MIN = EXPANSION_DISCHARGE_L_PER_H / 60;
 
 /** Time constant (seconds) for feed-header balancing between tanks (bottom drain valves → pump). */
 export const FEED_EQUALIZE_TAU_SEC = 45;
@@ -37,9 +43,9 @@ export const state = {
   soundEnabled: true,
   
   // Tanks (liters; SVG size unchanged)
-  tankA: 250,
+  tankA: 125,
   tankB: 250,
-  tankC: 250,
+  tankC: 10,
   tankMax: TANK_CAPACITY_L,
   
   // Valves (false = closed, true = open)
