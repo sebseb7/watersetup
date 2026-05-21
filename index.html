@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Pumpensimulator</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <main>
+    <!-- Left Section: Interactive SVG Schematic -->
+    <section class="viewport-panel">
+      <svg viewBox="0 0 900 680" id="schematic-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Water level gradient -->
+          <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#0284c7" stop-opacity="0.95" />
+          </linearGradient>
+          
+          <!-- Background grid -->
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.015)" stroke-width="1"/>
+          </pattern>
+        </defs>
+
+        <!-- Grid overlay -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- ================= TANKS (drawn first so top pipes connect visibly) ================= -->
+        <!-- Tank A -->
+        <g id="tank-a-group">
+          <rect class="tank-bg" x="100" y="100" width="120" height="180" />
+          <rect class="tank-water" id="tank-a-water" x="103" y="277" width="114" height="0" />
+          <rect class="tank-glass" x="100" y="100" width="120" height="180" />
+          <line x1="100" y1="130" x2="108" y2="130" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="100" y1="160" x2="105" y2="160" stroke="#4b5563" stroke-width="1" />
+          <line x1="100" y1="190" x2="108" y2="190" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="100" y1="220" x2="105" y2="220" stroke="#4b5563" stroke-width="1" />
+          <line x1="100" y1="250" x2="108" y2="250" stroke="#4b5563" stroke-width="1.5" />
+          <text class="tank-label" x="160" y="180">TANK A</text>
+          <text class="tank-volume" id="tank-a-volume-text" x="160" y="200">0 L</text>
+        </g>
+
+        <!-- Tank B -->
+        <g id="tank-b-group">
+          <rect class="tank-bg" x="260" y="100" width="120" height="180" />
+          <rect class="tank-water" id="tank-b-water" x="263" y="277" width="114" height="0" />
+          <rect class="tank-glass" x="260" y="100" width="120" height="180" />
+          <line x1="260" y1="130" x2="268" y2="130" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="260" y1="160" x2="265" y2="160" stroke="#4b5563" stroke-width="1" />
+          <line x1="260" y1="190" x2="268" y2="190" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="260" y1="220" x2="265" y2="220" stroke="#4b5563" stroke-width="1" />
+          <line x1="260" y1="250" x2="268" y2="250" stroke="#4b5563" stroke-width="1.5" />
+          <text class="tank-label" x="320" y="180">TANK B</text>
+          <text class="tank-volume" id="tank-b-volume-text" x="320" y="200">0 L</text>
+        </g>
+
+        <!-- Tank C -->
+        <g id="tank-c-group">
+          <rect class="tank-bg" x="420" y="100" width="120" height="180" />
+          <rect class="tank-water" id="tank-c-water" x="423" y="277" width="114" height="0" />
+          <rect class="tank-glass" x="420" y="100" width="120" height="180" />
+          <line x1="420" y1="130" x2="428" y2="130" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="420" y1="160" x2="425" y2="160" stroke="#4b5563" stroke-width="1" />
+          <line x1="420" y1="190" x2="428" y2="190" stroke="#4b5563" stroke-width="1.5" />
+          <line x1="420" y1="220" x2="425" y2="220" stroke="#4b5563" stroke-width="1" />
+          <line x1="420" y1="250" x2="428" y2="250" stroke="#4b5563" stroke-width="1.5" />
+          <text class="tank-label" x="480" y="180">TANK C</text>
+          <text class="tank-volume" id="tank-c-volume-text" x="480" y="200">0 L</text>
+        </g>
+
+        <!-- Pipes: node graph in plumbing-graph.js (fresh center, return left per tank) -->
+        <g id="plumbing-bg"></g>
+        <g id="plumbing-fluid"></g>
+        <g id="top-plumbing-valves"></g>
+
+        <!-- ================= VALVES (FEED / DRAIN) ================= -->
+        <!-- Feed Valve A -->
+        <g class="valve-body valve-vertical" id="svg-valve-feed-a" data-tooltip="Feed Valve A">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+        <!-- Feed Valve B -->
+        <g class="valve-body valve-vertical" id="svg-valve-feed-b" data-tooltip="Feed Valve B">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+        <!-- Feed Valve C -->
+        <g class="valve-body valve-vertical" id="svg-valve-feed-c" data-tooltip="Feed Valve C">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+
+        <!-- ================= CENTRAL PUMP ================= -->
+        <g class="pump-container" id="svg-pump" data-tooltip="Main Water Pump">
+          <circle class="pump-casing" r="24" cx="0" cy="0" />
+          <!-- Rotor blades (rotating design) -->
+          <g id="svg-pump-rotor-group">
+            <line class="pump-rotor" x1="-18" y1="0" x2="18" y2="0" />
+            <line class="pump-rotor" x1="0" y1="-18" x2="0" y2="18" />
+            <line class="pump-rotor" x1="-12" y1="-12" x2="12" y2="12" />
+            <line class="pump-rotor" x1="-12" y1="12" x2="12" y2="-12" />
+          </g>
+          <circle cx="0" cy="0" r="4" fill="#ffffff" />
+        </g>
+
+        <!-- Pressure Gauge — taps off main run at x=445 -->
+        <g id="svg-pressure-gauge" data-tooltip="System Pressure Gauge">
+          <rect x="-2" y="15" width="4" height="19" fill="#4b5563" /> <!-- stalk down to y=444, matches tap pipe -->
+          <circle cx="0" cy="0" r="18" fill="#1f2937" stroke="#4b5563" stroke-width="2" />
+          <path d="M -12 8 A 14 14 0 1 1 12 8" fill="none" stroke="#374151" stroke-width="1.5" />
+          <line id="svg-gauge-needle" x1="0" y1="0" x2="0" y2="-13" stroke="#ef4444" stroke-width="2" stroke-linecap="round" transform="rotate(-135)" />
+          <circle cx="0" cy="0" r="3" fill="#9ca3af" />
+          <text id="svg-gauge-val" x="0" y="9" font-size="8px" font-family="sans-serif" text-anchor="middle" fill="#f59e0b" font-weight="bold">0</text>
+          <text x="0" y="-22" font-size="6px" font-family="sans-serif" text-anchor="middle" fill="#6b7280">bar</text>
+        </g>
+
+        <!-- Expansion Tank — bottom sits on expTankPort; stub pipe is in plumbing-graph -->
+        <g id="svg-expansion-tank" data-tooltip="Expansion Tank">
+          <rect class="tank-bg" x="-24" y="-70" width="48" height="70" rx="12" ry="12" />
+          <rect class="tank-water" id="svg-expansion-water" x="-20" y="-2" width="40" height="0" rx="4" ry="4" />
+          <line id="svg-expansion-bladder" x1="-24" y1="-35" x2="24" y2="-35" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,2" />
+          <text x="0" y="-41" font-size="7.5px" font-family="sans-serif" text-anchor="middle" fill="#9ca3af" font-weight="600">EXP TANK</text>
+          <text id="svg-expansion-pct" x="0" y="-53" font-size="7px" font-family="sans-serif" text-anchor="middle" fill="#60a5fa">0%</text>
+        </g>
+
+
+        <!-- ================= VALVES (WATERING / ZONES) ================= -->
+        <!-- Watering Valve 1 -->
+        <g class="valve-body valve-vertical" id="svg-valve-water-1" data-tooltip="Watering Valve 1">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+        <!-- Watering Valve 2 -->
+        <g class="valve-body valve-vertical" id="svg-valve-water-2" data-tooltip="Watering Valve 2">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+        <!-- Watering Valve 3 -->
+        <g class="valve-body valve-vertical" id="svg-valve-water-3" data-tooltip="Watering Valve 3">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+        <!-- Watering Valve 4 -->
+        <g class="valve-body valve-vertical" id="svg-valve-water-4" data-tooltip="Watering Valve 4">
+          <path d="M -12 -8 L 12 8 L 12 -8 L -12 8 Z" fill="#374151" stroke="#4b5563" stroke-width="1.5" />
+          <circle class="valve-circle" r="8" cx="0" cy="0" />
+          <line class="valve-handle" x1="-8" y1="0" x2="8" y2="0" />
+        </g>
+
+
+        <!-- ================= WATERING SPRAYS & PLANTS ================= -->
+        <!-- Zone 1 — position from water1Zone in plumbing-graph.js -->
+        <g id="zone-1-group">
+          <g class="zone-sprinkler">
+          <path d="M -6 0 L 6 0 L 4 6 L -4 6 Z" fill="#9ca3af" />
+          <g class="spray-particles" id="spray-1">
+            <circle class="spray-droplet" cx="-12" cy="10" r="1.5" style="--spray-x: -20px;" />
+            <circle class="spray-droplet" cx="-4" cy="15" r="2" style="--spray-x: -8px;" />
+            <circle class="spray-droplet" cx="4" cy="12" r="1.5" style="--spray-x: 6px;" />
+            <circle class="spray-droplet" cx="12" cy="18" r="2" style="--spray-x: 18px;" />
+            <circle class="spray-droplet" cx="0" cy="8" r="2.5" style="--spray-x: 0px;" />
+          </g>
+          </g>
+          <g class="zone-plant">
+            <ellipse class="plant-soil" cx="0" cy="15" rx="24" ry="6" />
+            <g class="plant-foliage" id="plant-1-foliage">
+              <path class="plant-stem" id="plant-1-stem" d="M 0 15 Q -10 -5 0 -22 Q 10 -5 0 15" />
+              <path class="plant-leaf" id="plant-1-leaf-l" d="M -4 -8 C -14 -12 -12 -2 -4 -8" />
+              <path class="plant-leaf" id="plant-1-leaf-r" d="M 4 -12 C 14 -16 12 -6 4 -12" />
+              <path class="plant-leaf" id="plant-1-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
+            </g>
+            <!-- Pot -->
+            <polygon points="-20,15 20,15 15,35 -15,35" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1.5" />
+            <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
+            <rect class="plant-thirst-fill" id="plant-1-thirst" x="-18" y="50" width="20" height="5" rx="2" />
+            <text class="plant-status-label" id="plant-1-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+          </g>
+        </g>
+
+        <g id="zone-2-group">
+          <g class="zone-sprinkler">
+          <path d="M -6 0 L 6 0 L 4 6 L -4 6 Z" fill="#9ca3af" />
+          <g class="spray-particles" id="spray-2">
+            <circle class="spray-droplet" cx="-10" cy="12" r="1.5" style="--spray-x: -15px;" />
+            <circle class="spray-droplet" cx="-3" cy="18" r="2" style="--spray-x: -5px;" />
+            <circle class="spray-droplet" cx="5" cy="10" r="1.5" style="--spray-x: 8px;" />
+            <circle class="spray-droplet" cx="11" cy="16" r="2.5" style="--spray-x: 16px;" />
+            <circle class="spray-droplet" cx="1" cy="9" r="2" style="--spray-x: 2px;" />
+          </g>
+          </g>
+          <g class="zone-plant">
+            <ellipse class="plant-soil" cx="0" cy="15" rx="24" ry="6" />
+            <g class="plant-foliage" id="plant-2-foliage">
+              <path class="plant-stem" id="plant-2-stem" d="M 0 15 Q -10 -5 0 -22 Q 10 -5 0 15" />
+              <path class="plant-leaf" id="plant-2-leaf-l" d="M -4 -8 C -14 -12 -12 -2 -4 -8" />
+              <path class="plant-leaf" id="plant-2-leaf-r" d="M 4 -12 C 14 -16 12 -6 4 -12" />
+              <path class="plant-leaf" id="plant-2-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
+            </g>
+            <!-- Pot -->
+            <polygon points="-20,15 20,15 15,35 -15,35" fill="#f472b6" stroke="#ec4899" stroke-width="1.5" />
+            <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
+            <rect class="plant-thirst-fill" id="plant-2-thirst" x="-18" y="50" width="20" height="5" rx="2" />
+            <text class="plant-status-label" id="plant-2-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+          </g>
+        </g>
+
+        <g id="zone-3-group">
+          <g class="zone-sprinkler">
+          <path d="M -6 0 L 6 0 L 4 6 L -4 6 Z" fill="#9ca3af" />
+          <g class="spray-particles" id="spray-3">
+            <circle class="spray-droplet" cx="-12" cy="11" r="2" style="--spray-x: -18px;" />
+            <circle class="spray-droplet" cx="-5" cy="14" r="1.5" style="--spray-x: -7px;" />
+            <circle class="spray-droplet" cx="3" cy="17" r="2" style="--spray-x: 5px;" />
+            <circle class="spray-droplet" cx="10" cy="13" r="2.5" style="--spray-x: 14px;" />
+            <circle class="spray-droplet" cx="-1" cy="8" r="1.5" style="--spray-x: -1px;" />
+          </g>
+          </g>
+          <g class="zone-plant">
+            <ellipse class="plant-soil" cx="0" cy="15" rx="24" ry="6" />
+            <g class="plant-foliage" id="plant-3-foliage">
+              <path class="plant-stem" id="plant-3-stem" d="M 0 15 Q -10 -5 0 -22 Q 10 -5 0 15" />
+              <path class="plant-leaf" id="plant-3-leaf-l" d="M -4 -8 C -14 -12 -12 -2 -4 -8" />
+              <path class="plant-leaf" id="plant-3-leaf-r" d="M 4 -12 C 14 -16 12 -6 4 -12" />
+              <path class="plant-leaf" id="plant-3-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
+            </g>
+            <!-- Pot -->
+            <polygon points="-20,15 20,15 15,35 -15,35" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5" />
+            <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
+            <rect class="plant-thirst-fill" id="plant-3-thirst" x="-18" y="50" width="20" height="5" rx="2" />
+            <text class="plant-status-label" id="plant-3-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+          </g>
+        </g>
+
+        <g id="zone-4-group">
+          <g class="zone-sprinkler">
+          <path d="M -6 0 L 6 0 L 4 6 L -4 6 Z" fill="#9ca3af" />
+          <g class="spray-particles" id="spray-4">
+            <circle class="spray-droplet" cx="-11" cy="14" r="1.5" style="--spray-x: -16px;" />
+            <circle class="spray-droplet" cx="-4" cy="11" r="2.5" style="--spray-x: -5px;" />
+            <circle class="spray-droplet" cx="4" cy="15" r="1.5" style="--spray-x: 6px;" />
+            <circle class="spray-droplet" cx="12" cy="10" r="2" style="--spray-x: 18px;" />
+            <circle class="spray-droplet" cx="0" cy="18" r="2" style="--spray-x: 0px;" />
+          </g>
+          </g>
+          <g class="zone-plant">
+            <ellipse class="plant-soil" cx="0" cy="15" rx="24" ry="6" />
+            <g class="plant-foliage" id="plant-4-foliage">
+              <path class="plant-stem" id="plant-4-stem" d="M 0 15 Q -10 -5 0 -22 Q 10 -5 0 15" />
+              <path class="plant-leaf" id="plant-4-leaf-l" d="M -4 -8 C -14 -12 -12 -2 -4 -8" />
+              <path class="plant-leaf" id="plant-4-leaf-r" d="M 4 -12 C 14 -16 12 -6 4 -12" />
+              <path class="plant-leaf" id="plant-4-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
+            </g>
+            <!-- Pot -->
+            <polygon points="-20,15 20,15 15,35 -15,35" fill="#34d399" stroke="#10b981" stroke-width="1.5" />
+            <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
+            <rect class="plant-thirst-fill" id="plant-4-thirst" x="-18" y="50" width="20" height="5" rx="2" />
+            <text class="plant-status-label" id="plant-4-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+          </g>
+        </g>
+
+        <!-- Dynamic Labels for Valve Clicking -->
+        <g id="valve-click-labels" pointer-events="none">
+          <!-- Text labels will show near the valves on click or hover if needed -->
+        </g>
+      </svg>
+    </section>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
