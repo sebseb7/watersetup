@@ -7,7 +7,7 @@ import { calculateFlowPhysics, resetFlowPaths, updatePumpRunningState } from './
 import { renderSVGSynchronousPhysics, updateSVGSchedulingStates, updateExpansionTankSVG } from './renderer.js';
 import { bindControlListeners } from './events.js';
 import { mountPlumbing } from './plumbing-graph.js';
-import { bindSchematicFit, fitSchematic } from './fit-schematic.js';
+import { applySchematicViewBox, bindSchematicFit, fitSchematic } from './fit-schematic.js';
 
 let lastTime = performance.now();
 
@@ -42,7 +42,9 @@ function simLoop(timeNow) {
 window.addEventListener('DOMContentLoaded', () => {
   addLog('System online.', 'success');
   mountPlumbing();
+  applySchematicViewBox();
   bindSchematicFit();
+  fitSchematic();
   if (import.meta.hot) {
     import.meta.hot.accept('./plumbing-graph.js', () => {
       mountPlumbing();

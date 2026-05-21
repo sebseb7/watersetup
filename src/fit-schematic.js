@@ -1,63 +1,68 @@
-/** Size the schematic from the real panel box (CSS alone is unreliable on iOS). */
+/** Fit schematic to the frame using real pixel bounds (reliable on mobile Safari). */
 
-const VIEW_W = 900;
-const VIEW_H = 680;
-const ASPECT = VIEW_W / VIEW_H;
+import { SCHEMATIC_VIEW_BOX, VIEW_H, VIEW_W } from './plumbing-graph.js';
 
-/** Portrait: target fraction of panel height; max scale vs width-fit baseline. */
-const PORTRAIT_HEIGHT_GOAL = 0.78;
-const PORTRAIT_MAX_SCALE = 1.42;
+export function applySchematicViewBox() {
+  const svg = document.getElementById('schematic-svg');
+  if (!svg) return;
+  const { x, y, width, height } = SCHEMATIC_VIEW_BOX;
+  svg.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
+}
 
 export function fitSchematic() {
-  const panel = document.querySelector('.viewport-panel');
+  const frame = document.querySelector('.schematic-frame');
   const svg = document.getElementById('schematic-svg');
-  if (!panel || !svg) return;
+  if (!frame || !svg) return false;
 
-  const availW = panel.clientWidth;
-  const availH = panel.clientHeight;
-  if (availW < 1 || availH < 1) return;
+  applySchematicViewBox();
 
-  let w = availW;
-  let h = w / ASPECT;
-  const portrait = availH > availW;
+  const { width, height } = frame.getBoundingClientRect();
+  if (width < 1 || height < 1) return false;
 
-  if (portrait) {
-    const scale = Math.min(PORTRAIT_MAX_SCALE, (availH * PORTRAIT_HEIGHT_GOAL) / h);
-    w *= scale;
-    h *= scale;
-    if (h > availH) {
-      h = availH;
-      w = h * ASPECT;
-    }
-    const scrollX = w > availW + 2;
-    panel.style.overflowX = scrollX ? 'auto' : 'hidden';
-    panel.style.justifyContent = scrollX ? 'flex-start' : 'center';
-  } else {
-    if (h > availH) {
-      h = availH;
-      w = h * ASPECT;
-    }
-    const cap = Math.min(VIEW_W, availW);
-    if (w > cap) {
-      w = cap;
-      h = w / ASPECT;
-    }
-    panel.style.overflowX = 'hidden';
-    panel.style.justifyContent = 'center';
-  }
+  const scale = Math.min(width / VIEW_W, height / VIEW_H);
+  const w = Math.round(VIEW_W * scale);
+  const h = Math.round(VIEW_H * scale);
 
-  svg.style.width = `${Math.round(w)}px`;
-  svg.style.height = `${Math.round(h)}px`;
+  svg.style.width = `${w}px`;
+  svg.style.height = `${h}px`;
+  svg.style.maxWidth = '100%';
+  svg.style.maxHeight = '100%';
+  return true;
+}
+
+function scheduleFit() {
+  requestAnimationFrame(() => {
+    if (!fitSchematic()) retryFit(16);
+  });
+}
+
+let retryTimer = null;
+
+function retryFit(attemptsLeft) {
+  if (attemptsLeft <= 0) return;
+  if (fitSchematic()) return;
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(() => retryFit(attemptsLeft - 1), 50);
 }
 
 export function bindSchematicFit() {
+  const frame = document.querySelector('.schematic-frame');
   const panel = document.querySelector('.viewport-panel');
-  if (!panel) return;
+  if (!frame) return;
 
-  const run = () => requestAnimationFrame(fitSchematic);
-  run();
-  window.addEventListener('resize', run);
-  window.addEventListener('orientationchange', () => setTimeout(run, 100));
-  window.visualViewport?.addEventListener('resize', run);
-  new ResizeObserver(run).observe(panel);
+  const onResize = () => scheduleFit();
+
+  scheduleFit();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', () => setTimeout(onResize, 150));
+  window.addEventListener('load', onResize, { once: true });
+  window.visualViewport?.addEventListener('resize', onResize);
+  window.visualViewport?.addEventListener('scroll', onResize);
+  document.fonts?.ready?.then(onResize);
+
+  const ro = new ResizeObserver(onResize);
+  ro.observe(frame);
+  if (panel) ro.observe(panel);
+
+  if (document.readyState === 'complete') onResize();
 }

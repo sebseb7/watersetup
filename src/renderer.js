@@ -159,6 +159,38 @@ export function setPipeState(pipeId, isActive, { reverse = false } = {}) {
   path.classList.toggle('pipe-reverse', isActive && reverse);
 }
 
+const POT_DRIP_CFG = [
+  { cx: -9, y0: 17, y1: 34, dur: 0.95, delay: 0, lineX: -9 },
+  { cx: 0, y0: 18, y1: 35, dur: 0.85, delay: 0.3, lineX: 0 },
+  { cx: 9, y0: 17, y1: 34, dur: 1, delay: 0.55, lineX: 9 }
+];
+
+function tickPotDrips(dripsEl) {
+  const t = performance.now() / 1000;
+  const circles = dripsEl.querySelectorAll('.pot-drip');
+  const streaks = dripsEl.querySelectorAll('.pot-drip-streak');
+  POT_DRIP_CFG.forEach((cfg, i) => {
+    const elapsed = t - cfg.delay;
+    const phase = elapsed <= 0 ? 0 : (elapsed % cfg.dur) / cfg.dur;
+    const cy = cfg.y0 + (cfg.y1 - cfg.y0) * phase;
+    const opacity =
+      phase < 0.12 ? phase / 0.12 : phase > 0.82 ? (1 - phase) / 0.18 : 1;
+    const circle = circles[i];
+    const streak = streaks[i];
+    if (circle) {
+      circle.setAttribute('cy', cy.toFixed(1));
+      circle.setAttribute('opacity', opacity.toFixed(2));
+    }
+    if (streak) {
+      streak.setAttribute('x1', cfg.lineX);
+      streak.setAttribute('x2', cfg.lineX);
+      streak.setAttribute('y1', cfg.y0);
+      streak.setAttribute('y2', cy.toFixed(1));
+      streak.setAttribute('opacity', (opacity * 0.9).toFixed(2));
+    }
+  });
+}
+
 export function syncSVGPlantZone(zoneId, isWatering) {
   const zoneGroup = document.getElementById(`zone-${zoneId}-group`);
   const sprayGroup = document.getElementById(`spray-${zoneId}`);
@@ -174,7 +206,24 @@ export function syncSVGPlantZone(zoneId, isWatering) {
   const mood = getPlantMood(plant);
   zoneGroup.classList.toggle('plant-dead', mood === 'dead');
   zoneGroup.classList.toggle('plant-dry', mood === 'thirsty');
+  zoneGroup.classList.toggle('plant-overwatered', mood === 'overwatered');
   zoneGroup.classList.toggle('plant-healthy', mood === 'happy');
+
+  const drips = document.getElementById(`plant-${zoneId}-drips`);
+  if (drips) {
+    const showDrips = mood === 'overwatered';
+    drips.classList.toggle('is-active', showDrips);
+    if (showDrips) {
+      drips.removeAttribute('visibility');
+      drips.style.visibility = 'visible';
+      drips.style.opacity = '1';
+      tickPotDrips(drips);
+    } else {
+      drips.setAttribute('visibility', 'hidden');
+      drips.style.visibility = 'hidden';
+      drips.style.opacity = '0';
+    }
+  }
 
   const thirstFill = document.getElementById(`plant-${zoneId}-thirst`);
   if (thirstFill) {
@@ -187,6 +236,7 @@ export function syncSVGPlantZone(zoneId, isWatering) {
     const labels = {
       dead: 'DEAD',
       thirsty: 'THIRSTY',
+      overwatered: 'TOO WET',
       stressed: 'OK',
       happy: 'GROWING'
     };
@@ -205,6 +255,9 @@ export function syncSVGPlantZone(zoneId, isWatering) {
     } else if (mood === 'thirsty') {
       wilt = 0.82;
       droop = 10;
+    } else if (mood === 'overwatered') {
+      wilt = 0.92;
+      droop = 4;
     } else if (mood === 'happy') {
       wilt = 1.05;
     }

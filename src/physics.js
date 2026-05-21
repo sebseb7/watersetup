@@ -303,8 +303,9 @@ export function calculateFlowPhysics(dt) {
     }
   }
 
+  const sprinklerFlow = perSprinklerLpm > 0.001;
   const zoneLiters = [0, 0, 0, 0];
-  if (perSprinklerLpm > 0) {
+  if (sprinklerFlow) {
     const litersEach = perSprinklerLpm * (dt / 60);
     if (state.valveWater1) zoneLiters[0] = litersEach;
     if (state.valveWater2) zoneLiters[1] = litersEach;
@@ -312,6 +313,13 @@ export function calculateFlowPhysics(dt) {
     if (state.valveWater4) zoneLiters[3] = litersEach;
   }
   applyZoneWatering(zoneLiters);
+
+  const zoneIrrigating = [
+    state.simulationSpeed > 0 && state.valveWater1 && sprinklerFlow,
+    state.simulationSpeed > 0 && state.valveWater2 && sprinklerFlow,
+    state.simulationSpeed > 0 && state.valveWater3 && sprinklerFlow,
+    state.simulationSpeed > 0 && state.valveWater4 && sprinklerFlow
+  ];
 
   applyFreshwaterFill(dt);
 
@@ -330,7 +338,7 @@ export function calculateFlowPhysics(dt) {
     flowOutOfTank
   });
 
-  updatePlants(dt);
+  updatePlants(dt, zoneIrrigating);
 }
 
 /** L/min per open fresh fill valve — fast municipal fill into small tanks. */

@@ -10,7 +10,8 @@
   <main>
     <!-- Left Section: Interactive SVG Schematic -->
     <section class="viewport-panel">
-      <svg viewBox="0 0 900 680" id="schematic-svg" xmlns="http://www.w3.org/2000/svg">
+      <div class="schematic-frame">
+      <svg viewBox="36 -20 576 730" preserveAspectRatio="xMidYMid meet" id="schematic-svg" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <!-- Water level gradient -->
           <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
@@ -184,10 +185,19 @@
               <path class="plant-leaf" id="plant-1-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
             </g>
             <!-- Pot -->
-            <polygon points="-20,15 20,15 15,35 -15,35" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1.5" />
+            <polygon class="plant-pot" points="-20,15 20,15 15,35 -15,35" fill="#a78bfa" stroke="#8b5cf6" stroke-width="1.5" />
             <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
             <rect class="plant-thirst-fill" id="plant-1-thirst" x="-18" y="50" width="20" height="5" rx="2" />
             <text class="plant-status-label" id="plant-1-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+            <g class="pot-drips" id="plant-1-drips" visibility="hidden" aria-hidden="true">
+              <ellipse class="pot-puddle" cx="0" cy="36" rx="16" ry="4" />
+              <line class="pot-drip-streak" x1="-9" y1="17" x2="-9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="0" y1="18" x2="0" y2="18" stroke-width="3" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="9" y1="17" x2="9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <circle class="pot-drip" cx="-9" cy="17" r="2.8" />
+              <circle class="pot-drip" cx="0" cy="18" r="3.2" />
+              <circle class="pot-drip" cx="9" cy="17" r="2.6" />
+            </g>
           </g>
         </g>
 
@@ -211,10 +221,19 @@
               <path class="plant-leaf" id="plant-2-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
             </g>
             <!-- Pot -->
-            <polygon points="-20,15 20,15 15,35 -15,35" fill="#f472b6" stroke="#ec4899" stroke-width="1.5" />
+            <polygon class="plant-pot" points="-20,15 20,15 15,35 -15,35" fill="#f472b6" stroke="#ec4899" stroke-width="1.5" />
             <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
             <rect class="plant-thirst-fill" id="plant-2-thirst" x="-18" y="50" width="20" height="5" rx="2" />
             <text class="plant-status-label" id="plant-2-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+            <g class="pot-drips" id="plant-2-drips" visibility="hidden" aria-hidden="true">
+              <ellipse class="pot-puddle" cx="0" cy="36" rx="16" ry="4" />
+              <line class="pot-drip-streak" x1="-9" y1="17" x2="-9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="0" y1="18" x2="0" y2="18" stroke-width="3" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="9" y1="17" x2="9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <circle class="pot-drip" cx="-9" cy="17" r="2.8" />
+              <circle class="pot-drip" cx="0" cy="18" r="3.2" />
+              <circle class="pot-drip" cx="9" cy="17" r="2.6" />
+            </g>
           </g>
         </g>
 
@@ -238,10 +257,19 @@
               <path class="plant-leaf" id="plant-3-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
             </g>
             <!-- Pot -->
-            <polygon points="-20,15 20,15 15,35 -15,35" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5" />
+            <polygon class="plant-pot" points="-20,15 20,15 15,35 -15,35" fill="#60a5fa" stroke="#3b82f6" stroke-width="1.5" />
             <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
             <rect class="plant-thirst-fill" id="plant-3-thirst" x="-18" y="50" width="20" height="5" rx="2" />
             <text class="plant-status-label" id="plant-3-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+            <g class="pot-drips" id="plant-3-drips" visibility="hidden" aria-hidden="true">
+              <ellipse class="pot-puddle" cx="0" cy="36" rx="16" ry="4" />
+              <line class="pot-drip-streak" x1="-9" y1="17" x2="-9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="0" y1="18" x2="0" y2="18" stroke-width="3" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="9" y1="17" x2="9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <circle class="pot-drip" cx="-9" cy="17" r="2.8" />
+              <circle class="pot-drip" cx="0" cy="18" r="3.2" />
+              <circle class="pot-drip" cx="9" cy="17" r="2.6" />
+            </g>
           </g>
         </g>
 
@@ -265,10 +293,19 @@
               <path class="plant-leaf" id="plant-4-leaf-c" d="M 0 -22 C -6 -32 6 -32 0 -22" />
             </g>
             <!-- Pot -->
-            <polygon points="-20,15 20,15 15,35 -15,35" fill="#34d399" stroke="#10b981" stroke-width="1.5" />
+            <polygon class="plant-pot" points="-20,15 20,15 15,35 -15,35" fill="#34d399" stroke="#10b981" stroke-width="1.5" />
             <rect class="plant-thirst-bg" x="-18" y="50" width="36" height="5" rx="2" />
             <rect class="plant-thirst-fill" id="plant-4-thirst" x="-18" y="50" width="20" height="5" rx="2" />
             <text class="plant-status-label" id="plant-4-status" x="0" y="62" font-size="7" text-anchor="middle">OK</text>
+            <g class="pot-drips" id="plant-4-drips" visibility="hidden" aria-hidden="true">
+              <ellipse class="pot-puddle" cx="0" cy="36" rx="16" ry="4" />
+              <line class="pot-drip-streak" x1="-9" y1="17" x2="-9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="0" y1="18" x2="0" y2="18" stroke-width="3" stroke-linecap="round" />
+              <line class="pot-drip-streak" x1="9" y1="17" x2="9" y2="17" stroke-width="2.5" stroke-linecap="round" />
+              <circle class="pot-drip" cx="-9" cy="17" r="2.8" />
+              <circle class="pot-drip" cx="0" cy="18" r="3.2" />
+              <circle class="pot-drip" cx="9" cy="17" r="2.6" />
+            </g>
           </g>
         </g>
 
@@ -277,6 +314,7 @@
           <!-- Text labels will show near the valves on click or hover if needed -->
         </g>
       </svg>
+      </div>
     </section>
   </main>
 

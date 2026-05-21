@@ -75,10 +75,10 @@ export const NODES = {
   water4ValveTop: { x: 425, y: 527 },
   water4ValveBot: { x: 425, y: 543 },
   /** Pipe drop ends here — sprinkler mounts on this node. */
-  water1Zone: { x: 215, y: 580 },
-  water2Zone: { x: 285, y: 580 },
-  water3Zone: { x: 355, y: 580 },
-  water4Zone: { x: 425, y: 580 }
+  water1Zone: { x: 215, y: 548 },
+  water2Zone: { x: 285, y: 548 },
+  water3Zone: { x: 355, y: 548 },
+  water4Zone: { x: 425, y: 548 }
 };
 
 /** Pot origin below sprinkler — clears max growth (1.5×) from stem base y=15, top y=-32. */
@@ -92,6 +92,35 @@ export const ZONE_PLANT_OFFSET_Y =
   PLANT_CLEARANCE +
   MAX_PLANT_SCALE * (PLANT_STEM_Y - PLANT_TOP_Y) -
   PLANT_STEM_Y;
+
+/** Tight viewBox around tanks, plumbing, gauge, expansion tank, and plant stacks. */
+const SCHEMATIC_PAD = 24;
+const TANK_BOUNDS = { minX: 95, maxX: 545, minY: 95, maxY: 285 };
+const EXPANSION_HALF_W = 28;
+const PLANT_UI_BOTTOM = 62;
+const PLANT_FOLIAGE_TOP = MAX_PLANT_SCALE * (PLANT_STEM_Y - PLANT_TOP_Y) + PLANT_STEM_Y;
+
+export function getSchematicViewBox() {
+  const xs = Object.values(NODES).map((n) => n.x);
+  const ys = Object.values(NODES).map((n) => n.y);
+  const plantMaxY = Math.max(
+    ...[1, 2, 3, 4].map((z) => NODES[`water${z}Zone`].y + ZONE_PLANT_OFFSET_Y + PLANT_UI_BOTTOM)
+  );
+  const minX = Math.min(...xs, TANK_BOUNDS.minX) - SCHEMATIC_PAD;
+  const maxX = Math.max(...xs, TANK_BOUNDS.maxX, NODES.expTankPort.x + EXPANSION_HALF_W) + SCHEMATIC_PAD;
+  const minY = Math.min(...ys, TANK_BOUNDS.minY, NODES.expTankPort.y - 75) - SCHEMATIC_PAD;
+  const maxY = Math.max(...ys, TANK_BOUNDS.maxY, plantMaxY) + SCHEMATIC_PAD;
+  return {
+    x: Math.floor(minX),
+    y: Math.floor(minY),
+    width: Math.ceil(maxX - minX),
+    height: Math.ceil(maxY - minY)
+  };
+}
+
+export const SCHEMATIC_VIEW_BOX = getSchematicViewBox();
+export const VIEW_W = SCHEMATIC_VIEW_BOX.width;
+export const VIEW_H = SCHEMATIC_VIEW_BOX.height;
 
 const ZONE_GROUPS = [
   { groupId: 'zone-1-group', pipeEnd: 'water1Zone' },
